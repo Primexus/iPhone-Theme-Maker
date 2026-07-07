@@ -26,6 +26,20 @@ python -m venv venv
 3. Themed 1024x1024 icons are written to `output/` as PNGs, one per source
    file with the same name (SVGs are rasterized during conversion).
 
+### Per-icon scale overrides
+
+To make specific icons bigger (or smaller) than `--scale`, drop them into a
+subfolder of `input/` named after the scale you want, e.g.:
+
+```
+input/
+  facebook.png          # uses --scale (default 0.6)
+  0.85/
+    thin-logo.png        # uses scale 0.85 instead
+```
+
+The output mirrors the same subfolder structure (e.g. `output/0.85/thin-logo.png`).
+
 ## Options
 
 | Flag       | Default    | Description                                                        |

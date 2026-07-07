@@ -50,6 +50,24 @@ def load_icon(src_path: Path) -> Image.Image:
     return Image.open(src_path).convert("RGBA")
 
 
+def resolve_scale(src_path: Path, input_dir: Path, default_scale: float) -> float:
+    """Use the icon's immediate subfolder name as a scale override, e.g. input/0.8/icon.png."""
+    parent = src_path.parent
+    if parent == input_dir:
+        return default_scale
+    try:
+        return float(parent.name)
+    except ValueError:
+        return default_scale
+
+
+def resize_to_fit(icon: Image.Image, target: int) -> Image.Image:
+    """Scale to fit within a target x target box, enlarging or shrinking as needed."""
+    ratio = target / max(icon.size)
+    new_size = (max(1, round(icon.width * ratio)), max(1, round(icon.height * ratio)))
+    return icon.resize(new_size, Image.LANCZOS)
+
+
 def make_icon(
     src_path: Path,
     bg_color: tuple[int, int, int],
@@ -65,7 +83,7 @@ def make_icon(
     icon = recolor(icon, fg_color)
 
     target = int(CANVAS_SIZE * scale)
-    icon.thumbnail((target, target), Image.LANCZOS)
+    icon = resize_to_fit(icon, target)
 
     canvas = Image.new("RGB", (CANVAS_SIZE, CANVAS_SIZE), bg_color)
     offset = ((CANVAS_SIZE - icon.width) // 2, (CANVAS_SIZE - icon.height) // 2)
@@ -100,16 +118,19 @@ def main() -> None:
     bg_color = hex_to_rgb(args.bg if args.bg else theme["bg"])
     fg_color = hex_to_rgb(args.fg if args.fg else theme["fg"])
 
-    sources = sorted(p for glob in SOURCE_GLOBS for p in input_dir.glob(glob))
+    sources = sorted(p for glob in SOURCE_GLOBS for p in input_dir.rglob(glob))
     if not sources:
         print(f"No PNG/SVG files found in {input_dir}/")
         return
 
     for src in sources:
-        result = make_icon(src, bg_color, fg_color, args.scale)
-        dest = output_dir / f"{src.stem}.png"
+        scale = resolve_scale(src, input_dir, args.scale)
+        result = make_icon(src, bg_color, fg_color, scale)
+        rel = src.relative_to(input_dir).with_suffix(".png")
+        dest = output_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
         result.save(dest, "PNG")
-        print(f"{src.name} -> {dest}")
+        print(f"{src.relative_to(input_dir)} -> {dest} (scale={scale})")
 
 
 if __name__ == "__main__":
