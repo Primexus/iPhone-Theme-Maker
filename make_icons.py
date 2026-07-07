@@ -1,21 +1,31 @@
 #!/usr/bin/env python
-"""Batch-convert Flaticon PNG icons into themed 1024x1024 iPhone app icons.
+"""Batch-convert Flaticon PNG/SVG icons into themed 1024x1024 iPhone app icons.
 
-Each source icon is recolored to solid white (using its existing alpha
+Each source icon is recolored to a solid color (using its existing alpha
 channel as the shape mask), trimmed of transparent padding, scaled down,
 and centered on a background-colored 1024x1024 canvas.
 
 Usage:
     python make_icons.py
-    python make_icons.py --input input --output output --scale 0.6 --bg 103C49
+    python make_icons.py --input input --output output --scale 0.6 --bg 103C49 --fg FFFFFF
 """
 
 import argparse
+import io
 from pathlib import Path
 
+import resvg_py
 from PIL import Image
 
+SOURCE_GLOBS = ("*.png", "*.svg")
+SVG_RENDER_SIZE = 1024
+
 CANVAS_SIZE = 1024
+
+THEMES = {
+    "dark": {"bg": "103C49", "fg": "FFFFFF"},
+    "yellow": {"bg": "84813A", "fg": "151D20"},
+}
 
 
 def hex_to_rgb(value: str) -> tuple[int, int, int]:
@@ -23,22 +33,36 @@ def hex_to_rgb(value: str) -> tuple[int, int, int]:
     return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))
 
 
-def whiten(icon: Image.Image) -> Image.Image:
-    """Replace every opaque pixel's color with white, keeping alpha as-is."""
+def recolor(icon: Image.Image, color: tuple[int, int, int]) -> Image.Image:
+    """Replace every opaque pixel's color with `color`, keeping alpha as-is."""
     alpha = icon.getchannel("A")
-    white = Image.new("RGBA", icon.size, (255, 255, 255, 0))
-    white.putalpha(alpha)
-    return white
+    solid = Image.new("RGBA", icon.size, color + (0,))
+    solid.putalpha(alpha)
+    return solid
 
 
-def make_icon(src_path: Path, bg_color: tuple[int, int, int], scale: float) -> Image.Image:
-    icon = Image.open(src_path).convert("RGBA")
+def load_icon(src_path: Path) -> Image.Image:
+    if src_path.suffix.lower() == ".svg":
+        png_bytes = resvg_py.svg_to_bytes(
+            svg_path=str(src_path), width=SVG_RENDER_SIZE, height=SVG_RENDER_SIZE
+        )
+        return Image.open(io.BytesIO(bytes(png_bytes))).convert("RGBA")
+    return Image.open(src_path).convert("RGBA")
+
+
+def make_icon(
+    src_path: Path,
+    bg_color: tuple[int, int, int],
+    fg_color: tuple[int, int, int],
+    scale: float,
+) -> Image.Image:
+    icon = load_icon(src_path)
 
     bbox = icon.getchannel("A").getbbox()
     if bbox:
         icon = icon.crop(bbox)
 
-    icon = whiten(icon)
+    icon = recolor(icon, fg_color)
 
     target = int(CANVAS_SIZE * scale)
     icon.thumbnail((target, target), Image.LANCZOS)
@@ -51,9 +75,16 @@ def make_icon(src_path: Path, bg_color: tuple[int, int, int], scale: float) -> I
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", default="input", help="Folder of source PNG icons")
+    parser.add_argument("--input", default="input", help="Folder of source PNG/SVG icons")
     parser.add_argument("--output", default="output", help="Folder to write themed icons to")
-    parser.add_argument("--bg", default="103C49", help="Background color as hex (default: 103C49)")
+    parser.add_argument(
+        "--theme",
+        choices=sorted(THEMES),
+        default="dark",
+        help="Named preset for background/icon colors (default: dark)",
+    )
+    parser.add_argument("--bg", default=None, help="Background color as hex, overrides --theme")
+    parser.add_argument("--fg", default=None, help="Icon color as hex, overrides --theme")
     parser.add_argument(
         "--scale",
         type=float,
@@ -65,16 +96,18 @@ def main() -> None:
     input_dir = Path(args.input)
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
-    bg_color = hex_to_rgb(args.bg)
+    theme = THEMES[args.theme]
+    bg_color = hex_to_rgb(args.bg if args.bg else theme["bg"])
+    fg_color = hex_to_rgb(args.fg if args.fg else theme["fg"])
 
-    sources = sorted(p for p in input_dir.glob("*.png"))
+    sources = sorted(p for glob in SOURCE_GLOBS for p in input_dir.glob(glob))
     if not sources:
-        print(f"No PNG files found in {input_dir}/")
+        print(f"No PNG/SVG files found in {input_dir}/")
         return
 
     for src in sources:
-        result = make_icon(src, bg_color, args.scale)
-        dest = output_dir / src.name
+        result = make_icon(src, bg_color, fg_color, args.scale)
+        dest = output_dir / f"{src.stem}.png"
         result.save(dest, "PNG")
         print(f"{src.name} -> {dest}")
 
