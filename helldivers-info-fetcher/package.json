@@ -5,6 +5,10 @@
   "type": "module",
   "description": "Local test harness + scripts for a Widgy text-data widget that shows Helldivers 2 info.",
   "scripts": {
-    "test:helldivers": "node runner.js scripts/helldivers.js"
+    "test:helldivers": "node runner.js scripts/helldivers.js",
+    "test:major-order": "node runner.js scripts/major-order.js",
+    "test:planet-status": "node runner.js scripts/planet-status.js",
+    "test:news": "node runner.js scripts/news.js",
+    "test:campaigns": "node runner.js scripts/campaigns.js"
   }
 }

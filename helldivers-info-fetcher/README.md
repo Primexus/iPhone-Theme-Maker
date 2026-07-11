@@ -45,6 +45,24 @@ npm run test:helldivers
 Once a script prints what you want, copy its contents into Widgy's editor
 as-is.
 
+### Individual scripts
+
+Each script is a standalone Widgy body for one slice of Helldivers data:
+
+- `scripts/major-order.js` for the current Major Order
+- `scripts/planet-status.js` for planet status and player counts
+- `scripts/news.js` for the latest dispatch/news item
+- `scripts/campaigns.js` for active campaigns/frontlines
+
+Run them with:
+
+```
+npm run test:major-order
+npm run test:planet-status
+npm run test:news
+npm run test:campaigns
+```
+
 ## Helldivers 2 API
 
 Using the community API at [helldivers-2.github.io/api](https://helldivers-2.github.io/api/)
@@ -66,3 +84,7 @@ Using the community API at [helldivers-2.github.io/api](https://helldivers-2.git
 `scripts/helldivers.js` is set up to fail soft: if the Major Order fetch
 errors it falls back to a placeholder string instead of throwing, so the
 widget never shows a Widgy error state just because the API rate-limited it.
+
+The split scripts above use the Helldivers Training Manual API at
+`https://helldiverstrainingmanual.com/api/v1` and are intentionally small so
+each one can be pasted into a separate Widgy text layer.
