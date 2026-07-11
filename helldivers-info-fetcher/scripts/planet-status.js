@@ -16,6 +16,14 @@ function planetLabel(planets, index) {
   return planet?.name || `Planet ${index}`;
 }
 
+function deliver(value) {
+  if (typeof sendToWidgy === "function") {
+    sendToWidgy(value);
+  }
+
+  return value;
+}
+
 let output = "No planet status available";
 
 try {
@@ -46,4 +54,4 @@ try {
   output = "Planet status fetch failed";
 }
 
-return output;
+deliver(output);

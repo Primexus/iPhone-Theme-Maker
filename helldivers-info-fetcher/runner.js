@@ -32,11 +32,22 @@ if (mode !== "async" && mode !== "script") {
 
 const source = fs.readFileSync(path.resolve(scriptPath), "utf8");
 
+let sentValue;
+let resolveSentValue;
+const sentValuePromise = new Promise((resolve) => {
+  resolveSentValue = resolve;
+});
+
 // Only the globals Widgy is known to expose get into the sandbox — this
 // keeps the test environment honest about what a pasted script can rely on.
 const sandbox = {
   console,
   fetch,
+  sendToWidgy: (value) => {
+    sentValue = value;
+    resolveSentValue(value);
+    return value;
+  },
   btoa: (str) => Buffer.from(str, "binary").toString("base64"),
   atob: (str) => Buffer.from(str, "base64").toString("binary"),
 };
@@ -48,9 +59,18 @@ const wrapped =
     : `(async function () {\n${source}\n})()`;
 
 Promise.resolve(vm.runInContext(wrapped, sandbox, { filename: path.resolve(scriptPath) }))
-  .then((value) => {
+  .then(async (value) => {
     console.log(`\n--- Widgy text output (${mode} mode) ---`);
-    console.log(typeof value === "string" ? value : JSON.stringify(value, null, 2));
+    let output = value;
+
+    if (output === undefined) {
+      output = await Promise.race([
+        sentValuePromise,
+        new Promise((resolve) => setTimeout(() => resolve(sentValue), 15000)),
+      ]);
+    }
+
+    console.log(typeof output === "string" ? output : JSON.stringify(output, null, 2));
   })
   .catch((err) => {
     console.error(`\nScript threw in ${mode} mode:`, err);

@@ -22,27 +22,33 @@ function stripTags(text) {
   return String(text ?? "").replace(/<[^>]+>/g, "");
 }
 
-let output = "No active Major Order";
-
-try {
-  const response = await fetch(`${base}/war/major-orders`, { headers });
-  const orders = await response.json();
-
-  if (Array.isArray(orders) && orders.length > 0) {
-    const order = orders[0];
-    const title = order.setting?.overrideTitle || "MAJOR ORDER";
-    const briefing = stripTags(order.setting?.overrideBrief || order.setting?.taskDescription || "");
-    const shortBriefing = briefing.length > 90 ? `${briefing.slice(0, 87)}...` : briefing;
-    const rewardAmount = order.setting?.reward?.amount;
-
-    output = `${title}\n${shortBriefing}\nExpires in ${formatDuration(order.expiresIn)}`;
-
-    if (rewardAmount != null) {
-      output += `\nReward: ${rewardAmount} medals`;
-    }
+function deliver(value) {
+  if (typeof sendToWidgy === "function") {
+    sendToWidgy(value);
   }
-} catch (error) {
-  output = "Major Order fetch failed";
 }
 
-return output;
+function buildOutput(orders) {
+  if (!Array.isArray(orders) || orders.length === 0) {
+    return "No active Major Order";
+  }
+
+  const order = orders[0];
+  const title = order.setting?.overrideTitle || "MAJOR ORDER";
+  const briefing = stripTags(order.setting?.overrideBrief || order.setting?.taskDescription || "");
+  const shortBriefing = briefing.length > 90 ? `${briefing.slice(0, 87)}...` : briefing;
+  const rewardAmount = order.setting?.reward?.amount;
+
+  let output = `${title}\n${shortBriefing}\nExpires in ${formatDuration(order.expiresIn)}`;
+
+  if (rewardAmount != null) {
+    output += `\nReward: ${rewardAmount} medals`;
+  }
+
+  return output;
+}
+
+fetch(`${base}/war/major-orders`, { headers })
+  .then((response) => response.json())
+  .then((orders) => deliver(buildOutput(orders)))
+  .catch(() => deliver("Major Order fetch failed"));

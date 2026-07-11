@@ -11,6 +11,14 @@ function formatPercent(value) {
   return `${Number(value || 0).toFixed(1)}%`;
 }
 
+function deliver(value) {
+  if (typeof sendToWidgy === "function") {
+    sendToWidgy(value);
+  }
+
+  return value;
+}
+
 let output = "No active campaigns";
 
 try {
@@ -33,4 +41,4 @@ try {
   output = "Campaign fetch failed";
 }
 
-return output;
+deliver(output);

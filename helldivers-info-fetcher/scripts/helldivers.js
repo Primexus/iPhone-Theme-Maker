@@ -20,6 +20,14 @@ function stripTags(text) {
   return text.replace(/<[^>]+>/g, "");
 }
 
+function deliver(value) {
+  if (typeof sendToWidgy === "function") {
+    sendToWidgy(value);
+  }
+
+  return value;
+}
+
 let orderText = "No active Major Order";
 
 try {
@@ -53,4 +61,4 @@ try {
   // News is a nice-to-have; skip silently if it fails.
 }
 
-return orderText + newsText;
+deliver(orderText + newsText);

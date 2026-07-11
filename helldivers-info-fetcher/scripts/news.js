@@ -11,6 +11,14 @@ function stripTags(text) {
   return String(text ?? "").replace(/<[^>]+>/g, "");
 }
 
+function deliver(value) {
+  if (typeof sendToWidgy === "function") {
+    sendToWidgy(value);
+  }
+
+  return value;
+}
+
 let output = "No recent news";
 
 try {
@@ -33,4 +41,4 @@ try {
   output = "News fetch failed";
 }
 
-return output;
+deliver(output);
