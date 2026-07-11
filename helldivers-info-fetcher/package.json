@@ -1,0 +1,10 @@
+{
+  "name": "helldivers-info-fetcher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local test harness + scripts for a Widgy text-data widget that shows Helldivers 2 info.",
+  "scripts": {
+    "test:helldivers": "node runner.js scripts/helldivers.js"
+  }
+}
