@@ -24,7 +24,7 @@ CANVAS_SIZE = 1024
 
 THEMES = {
     "dark": {"bg": "103C49", "fg": "FFFFFF"},
-    "yellow": {"bg": "84813A", "fg": "151D20"},
+    "yellow": {"bg": "FFE710", "fg": "151D20"},
 }
 
 

@@ -46,7 +46,7 @@ The output mirrors the same subfolder structure (e.g. `output/0.85/thin-logo.png
 |------------|------------|---------------------------------------------------------------------|
 | `--input`  | `input`    | Folder of source PNG/SVG icons                                      |
 | `--output` | `output`   | Folder to write themed icons to                                     |
-| `--theme`  | `dark`     | Named preset for background/icon colors: `dark` (`103C49` bg / `FFFFFF` icon) or `yellow` (`84813A` bg / `151D20` icon) |
+| `--theme`  | `dark`     | Named preset for background/icon colors: `dark` (`103C49` bg / `FFFFFF` icon) or `yellow` (`FFE710` bg / `151D20` icon) |
 | `--bg`     | *(none)*   | Background color as hex, overrides `--theme`                       |
 | `--fg`     | *(none)*   | Icon color as hex, overrides `--theme`                              |
 | `--scale`  | `0.6`      | Fraction of the 1024 canvas the icon's longest side should fill     |
