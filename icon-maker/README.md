@@ -46,15 +46,23 @@ The output mirrors the same subfolder structure (e.g. `output/0.85/thin-logo.png
 |------------|------------|---------------------------------------------------------------------|
 | `--input`  | `input`    | Folder of source PNG/SVG icons                                      |
 | `--output` | `output`   | Folder to write themed icons to                                     |
-| `--theme`  | `dark`     | Named preset for background/icon colors: `dark` (`103C49` bg / `FFFFFF` icon) or `yellow` (`FFE710` bg / `151D20` icon) |
+| `--theme`  | `dark`     | Named preset for background/icon colors: `dark` (`103C49` bg / `FFFFFF` icon), `yellow` (`FFE710` bg / `151D20` icon), `outline-yellow` (`030E14` bg / `E4BD32` icon + border), or `outline-blue` (`030E14` bg / `36A6CB` icon + border) |
 | `--bg`     | *(none)*   | Background color as hex, overrides `--theme`                       |
 | `--fg`     | *(none)*   | Icon color as hex, overrides `--theme`                              |
+| `--border` | *(none)*   | Outline border color as hex, overrides `--theme`. Pass `none` to strip a preset's border |
 | `--scale`  | `0.6`      | Fraction of the 1024 canvas the icon's longest side should fill     |
 
 Example using the yellow preset into its own output folder:
 
 ```
 ./venv/Scripts/python.exe make_icons.py --theme yellow --output output_yellow
+```
+
+Example using the thin-border outline presets (dark bg, colored icon + matching border):
+
+```
+./venv/Scripts/python.exe make_icons.py --theme outline-yellow --output output_outline_yellow
+./venv/Scripts/python.exe make_icons.py --theme outline-blue --output output_outline_blue
 ```
 
 Example with a one-off custom background and larger glyph:
@@ -75,4 +83,7 @@ For each PNG/SVG in the input folder, `make_icons.py`:
 3. Recolors every pixel to `--fg`, keeping the original alpha channel (so
    anti-aliased edges stay smooth).
 4. Scales the icon to fit within `--scale` of the 1024x1024 canvas.
-5. Centers it on a solid background of `--bg` and saves the result as PNG.
+5. Centers it on a solid background of `--bg`.
+6. If a `--border` color is set (directly or via a theme like `outline-yellow`
+   / `outline-blue`), strokes a thin rounded-rectangle outline near the edge
+   of the canvas in that color, then saves the result as PNG.

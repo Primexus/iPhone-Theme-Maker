@@ -15,16 +15,23 @@ import io
 from pathlib import Path
 
 import resvg_py
-from PIL import Image
+from PIL import Image, ImageDraw
 
 SOURCE_GLOBS = ("*.png", "*.svg")
 SVG_RENDER_SIZE = 1024
 
 CANVAS_SIZE = 1024
 
+# Fractions of CANVAS_SIZE used to size/place an outline border.
+BORDER_WIDTH_FRACTION = 0.018
+BORDER_INSET_FRACTION = 0.06
+BORDER_RADIUS_FRACTION = 0.22
+
 THEMES = {
     "dark": {"bg": "103C49", "fg": "FFFFFF"},
     "yellow": {"bg": "FFE710", "fg": "151D20"},
+    "outline-yellow": {"bg": "030E14", "fg": "E4BD32", "border": "E4BD32"},
+    "outline-blue": {"bg": "030E14", "fg": "36A6CB", "border": "36A6CB"},
 }
 
 
@@ -73,6 +80,7 @@ def make_icon(
     bg_color: tuple[int, int, int],
     fg_color: tuple[int, int, int],
     scale: float,
+    border_color: tuple[int, int, int] | None = None,
 ) -> Image.Image:
     icon = load_icon(src_path)
 
@@ -88,6 +96,15 @@ def make_icon(
     canvas = Image.new("RGB", (CANVAS_SIZE, CANVAS_SIZE), bg_color)
     offset = ((CANVAS_SIZE - icon.width) // 2, (CANVAS_SIZE - icon.height) // 2)
     canvas.paste(icon, offset, mask=icon)
+
+    if border_color is not None:
+        inset = round(CANVAS_SIZE * BORDER_INSET_FRACTION)
+        width = round(CANVAS_SIZE * BORDER_WIDTH_FRACTION)
+        radius = round(CANVAS_SIZE * BORDER_RADIUS_FRACTION)
+        draw = ImageDraw.Draw(canvas)
+        box = (inset, inset, CANVAS_SIZE - inset, CANVAS_SIZE - inset)
+        draw.rounded_rectangle(box, radius=radius, outline=border_color, width=width)
+
     return canvas
 
 
@@ -104,6 +121,11 @@ def main() -> None:
     parser.add_argument("--bg", default=None, help="Background color as hex, overrides --theme")
     parser.add_argument("--fg", default=None, help="Icon color as hex, overrides --theme")
     parser.add_argument(
+        "--border",
+        default=None,
+        help="Outline border color as hex, overrides --theme. Pass 'none' to disable a theme's border",
+    )
+    parser.add_argument(
         "--scale",
         type=float,
         default=0.6,
@@ -117,6 +139,10 @@ def main() -> None:
     theme = THEMES[args.theme]
     bg_color = hex_to_rgb(args.bg if args.bg else theme["bg"])
     fg_color = hex_to_rgb(args.fg if args.fg else theme["fg"])
+    if args.border is not None:
+        border_color = None if args.border.lower() == "none" else hex_to_rgb(args.border)
+    else:
+        border_color = hex_to_rgb(theme["border"]) if "border" in theme else None
 
     sources = sorted(p for glob in SOURCE_GLOBS for p in input_dir.rglob(glob))
     if not sources:
@@ -125,7 +151,7 @@ def main() -> None:
 
     for src in sources:
         scale = resolve_scale(src, input_dir, args.scale)
-        result = make_icon(src, bg_color, fg_color, scale)
+        result = make_icon(src, bg_color, fg_color, scale, border_color)
         rel = src.relative_to(input_dir).with_suffix(".png")
         dest = output_dir / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
